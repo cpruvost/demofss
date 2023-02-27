@@ -1,0 +1,75 @@
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: fss-pv
+spec:
+  capacity:
+    storage: 50Gi
+  volumeMode: Filesystem
+  accessModes:
+    - ReadWriteMany
+  persistentVolumeReclaimPolicy: Retain
+  csi:
+    driver: fss.csi.oraclecloud.com
+    volumeHandle: ocid1.mounttarget.oc1.eu_frankfurt_1.aaaaaa4np2ucgfpkmzzgcllqojxwiotfouwwm4tbnzvwm5lsoqwtcllbmqwtgaaa:10.0.10.182:/MyFss
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: fss-pvc
+spec:
+  accessModes:
+    - ReadWriteMany
+  storageClassName: ""
+  resources:
+    requests:
+      storage: 50Gi
+  volumeName: fss-pv
+---
+#apiVersion: v1
+#kind: Pod
+#metadata:
+#  name: demofss
+#  labels:
+#    app: fss
+#spec:
+#  containers:
+#  - name: demofss
+#    image: fra.ocir.io/frsxwtjslf35/demofss:0.0.3-root
+#    volumeMounts:
+#     - name: nfs
+#       mountPath: "/mnt/MyFss" 
+#    ports:
+#      - containerPort: 8080
+#        name: http
+#  imagePullSecrets:
+#      - name: queueoke-secret #check secret.yaml      
+#  volumes:
+#  - name: nfs
+#    persistentVolumeClaim:
+#      claimName: fss-pvc
+#      readOnly: false
+#  nodeSelector:
+#    nodeName: node1
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: fss
+  name: demofss
+  namespace: default
+  annotations:
+    oci.oraclecloud.com/load-balancer-type: "lb"
+    service.beta.kubernetes.io/oci-load-balancer-shape: "flexible"
+    service.beta.kubernetes.io/oci-load-balancer-shape-flex-min: "10"
+    service.beta.kubernetes.io/oci-load-balancer-shape-flex-max: "100"
+spec:
+  ports:
+  - port: 80
+    protocol: TCP
+    targetPort: 8080
+  selector:
+    app: fss
+  sessionAffinity: None
+  type: LoadBalancer    

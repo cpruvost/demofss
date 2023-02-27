@@ -1,0 +1,25 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: demofss
+  labels:
+    app: fss
+spec:
+  containers:
+  - name: demofss
+    image: fra.ocir.io/frsxwtjslf35/demofss:0.0.3-root
+    volumeMounts:
+     - name: nfs
+       mountPath: "/mnt/MyFss" 
+    ports:
+      - containerPort: 8080
+        name: http
+  imagePullSecrets:
+      - name: queueoke-secret #check secret.yaml      
+  volumes:
+  - name: nfs
+    persistentVolumeClaim:
+      claimName: fss-pvc
+      readOnly: false
+  nodeSelector:
+    nodeName: node1
